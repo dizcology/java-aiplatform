@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2021 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,14 @@ package aiplatform;
 
 // [START aiplatform_deploy_model_custom_trained_model_sample]
 import com.google.api.gax.longrunning.OperationFuture;
-import com.google.cloud.aiplatform.v1.DedicatedResources;
-import com.google.cloud.aiplatform.v1.DeployModelOperationMetadata;
-import com.google.cloud.aiplatform.v1.DeployModelResponse;
-import com.google.cloud.aiplatform.v1.DeployedModel;
-import com.google.cloud.aiplatform.v1.EndpointName;
-import com.google.cloud.aiplatform.v1.EndpointServiceClient;
-import com.google.cloud.aiplatform.v1.EndpointServiceSettings;
-import com.google.cloud.aiplatform.v1.MachineSpec;
-import com.google.cloud.aiplatform.v1.ModelName;
+import com.google.cloud.aiplatform.v1beta1.DedicatedResources;
+import com.google.cloud.aiplatform.v1beta1.DeployModelOperationMetadata;
+import com.google.cloud.aiplatform.v1beta1.DeployModelResponse;
+import com.google.cloud.aiplatform.v1beta1.DeployedModel;
+import com.google.cloud.aiplatform.v1beta1.EndpointName;
+import com.google.cloud.aiplatform.v1beta1.EndpointServiceClient;
+import com.google.cloud.aiplatform.v1beta1.EndpointServiceSettings;
+import com.google.cloud.aiplatform.v1beta1.MachineSpec;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,30 +37,35 @@ public class DeployModelCustomTrainedModelSample {
       throws IOException, ExecutionException, InterruptedException {
     // TODO(developer): Replace these variables before running the sample.
     String project = "PROJECT";
+    String location = "us-central1";
     String endpointId = "ENDPOINT_ID";
-    String modelName = "MODEL_NAME";
+    String modelId = "MODEL_ID";
     String deployedModelDisplayName = "DEPLOYED_MODEL_DISPLAY_NAME";
-    deployModelCustomTrainedModelSample(project, endpointId, modelName, deployedModelDisplayName);
+    deployModelCustomTrainedModelSample(
+        project, location, endpointId, modelId, deployedModelDisplayName);
   }
 
   static void deployModelCustomTrainedModelSample(
-      String project, String endpointId, String model, String deployedModelDisplayName)
+      String project,
+      String location,
+      String endpointId,
+      String modelId,
+      String deployedModelDisplayName)
       throws IOException, ExecutionException, InterruptedException {
+    // The AI Platform services require regional API endpoints.
     EndpointServiceSettings settings =
         EndpointServiceSettings.newBuilder()
             .setEndpoint("us-central1-aiplatform.googleapis.com:443")
             .build();
-    String location = "us-central1";
 
     // Initialize client that will be used to send requests. This client only needs to be created
     // once, and can be reused for multiple requests. After completing all of your requests, call
     // the "close" method on the client to safely clean up any remaining background resources.
     try (EndpointServiceClient client = EndpointServiceClient.create(settings)) {
+      String modelName = ModelName.of(project, location, modelId).toString();
       MachineSpec machineSpec = MachineSpec.newBuilder().setMachineType("n1-standard-2").build();
       DedicatedResources dedicatedResources =
           DedicatedResources.newBuilder().setMinReplicaCount(1).setMachineSpec(machineSpec).build();
-
-      String modelName = ModelName.of(project, location, model).toString();
       DeployedModel deployedModel =
           DeployedModel.newBuilder()
               .setModel(modelName)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2021 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@ package aiplatform;
 
 // [START aiplatform_export_model_video_action_recognition_sample]
 import com.google.api.gax.longrunning.OperationFuture;
-import com.google.cloud.aiplatform.v1.ExportModelOperationMetadata;
-import com.google.cloud.aiplatform.v1.ExportModelRequest;
-import com.google.cloud.aiplatform.v1.ExportModelResponse;
-import com.google.cloud.aiplatform.v1.GcsDestination;
-import com.google.cloud.aiplatform.v1.ModelName;
-import com.google.cloud.aiplatform.v1.ModelServiceClient;
-import com.google.cloud.aiplatform.v1.ModelServiceSettings;
+import com.google.cloud.aiplatform.v1beta1.ExportModelOperationMetadata;
+import com.google.cloud.aiplatform.v1beta1.ExportModelRequest;
+import com.google.cloud.aiplatform.v1beta1.ExportModelResponse;
+import com.google.cloud.aiplatform.v1beta1.GcsDestination;
+import com.google.cloud.aiplatform.v1beta1.ModelName;
+import com.google.cloud.aiplatform.v1beta1.ModelServiceClient;
+import com.google.cloud.aiplatform.v1beta1.ModelServiceSettings;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
@@ -34,31 +34,36 @@ public class ExportModelVideoActionRecognitionSample {
       throws IOException, ExecutionException, InterruptedException {
     // TODO(developer): Replace these variables before running the sample.
     String project = "PROJECT";
+    String location = "us-central1";
     String modelId = "MODEL_ID";
     String gcsDestinationOutputUriPrefix = "GCS_DESTINATION_OUTPUT_URI_PREFIX";
     String exportFormat = "EXPORT_FORMAT";
     exportModelVideoActionRecognitionSample(
-        project, modelId, gcsDestinationOutputUriPrefix, exportFormat);
+        project, location, modelId, gcsDestinationOutputUriPrefix, exportFormat);
   }
 
   static void exportModelVideoActionRecognitionSample(
-      String project, String modelId, String gcsDestinationOutputUriPrefix, String exportFormat)
+      String project,
+      String location,
+      String modelId,
+      String gcsDestinationOutputUriPrefix,
+      String exportFormat)
       throws IOException, ExecutionException, InterruptedException {
+    // The AI Platform services require regional API endpoints.
     ModelServiceSettings settings =
         ModelServiceSettings.newBuilder()
             .setEndpoint("us-central1-aiplatform.googleapis.com:443")
             .build();
-    String location = "us-central1";
 
     // Initialize client that will be used to send requests. This client only needs to be created
     // once, and can be reused for multiple requests. After completing all of your requests, call
     // the "close" method on the client to safely clean up any remaining background resources.
     try (ModelServiceClient client = ModelServiceClient.create(settings)) {
-      GcsDestination gcsDestination =
+      GcsDestination artifactDestination =
           GcsDestination.newBuilder().setOutputUriPrefix(gcsDestinationOutputUriPrefix).build();
       ExportModelRequest.OutputConfig outputConfig =
           ExportModelRequest.OutputConfig.newBuilder()
-              .setArtifactDestination(gcsDestination)
+              .setArtifactDestination(artifactDestination)
               .setExportFormatId(exportFormat)
               .build();
       ModelName name = ModelName.of(project, location, modelId);

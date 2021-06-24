@@ -17,16 +17,13 @@
 package aiplatform;
 
 // [START aiplatform_create_data_labeling_job_active_learning_sample]
-import com.google.cloud.aiplatform.v1.ActiveLearningConfig;
-import com.google.cloud.aiplatform.v1.DataLabelingJob;
-import com.google.cloud.aiplatform.v1.DatasetName;
-import com.google.cloud.aiplatform.v1.JobServiceClient;
-import com.google.cloud.aiplatform.v1.JobServiceSettings;
-import com.google.cloud.aiplatform.v1.LocationName;
+import com.google.cloud.aiplatform.v1beta1.ActiveLearningConfig;
+import com.google.cloud.aiplatform.v1beta1.DataLabelingJob;
+import com.google.cloud.aiplatform.v1beta1.JobServiceClient;
+import com.google.cloud.aiplatform.v1beta1.JobServiceSettings;
+import com.google.cloud.aiplatform.v1beta1.LocationName;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.google.protobuf.Value;
-import com.google.protobuf.util.JsonFormat;
 import java.io.IOException;
 
 public class CreateDataLabelingJobActiveLearningSample {
@@ -34,28 +31,30 @@ public class CreateDataLabelingJobActiveLearningSample {
   public static void main(String[] args) throws IOException {
     // TODO(developer): Replace these variables before running the sample.
     String project = "PROJECT";
+    String location = "us-central1";
     String displayName = "DISPLAY_NAME";
     String dataset = "DATASET";
     String instructionUri = "INSTRUCTION_URI";
     String inputsSchemaUri = "INPUTS_SCHEMA_URI";
     String annotationSpec = "ANNOTATION_SPEC";
     createDataLabelingJobActiveLearningSample(
-        project, displayName, dataset, instructionUri, inputsSchemaUri, annotationSpec);
+        project, location, displayName, dataset, instructionUri, inputsSchemaUri, annotationSpec);
   }
 
   static void createDataLabelingJobActiveLearningSample(
       String project,
+      String location,
       String displayName,
       String dataset,
       String instructionUri,
       String inputsSchemaUri,
       String annotationSpec)
       throws IOException {
+    // The AI Platform services require regional API endpoints.
     JobServiceSettings settings =
         JobServiceSettings.newBuilder()
             .setEndpoint("us-central1-aiplatform.googleapis.com:443")
             .build();
-    String location = "us-central1";
 
     // Initialize client that will be used to send requests. This client only needs to be created
     // once, and can be reused for multiple requests. After completing all of your requests, call
@@ -65,18 +64,13 @@ public class CreateDataLabelingJobActiveLearningSample {
       jsonAnnotationSpecs.add(annotationSpec);
       JsonObject jsonInputs = new JsonObject();
       jsonInputs.add("annotation_specs", jsonAnnotationSpecs);
-      Value.Builder inputsBuilder = Value.newBuilder();
-      JsonFormat.parser().merge(jsonInputs.toString(), inputsBuilder);
-      Value inputs = inputsBuilder.build();
       ActiveLearningConfig activeLearningConfig =
           ActiveLearningConfig.newBuilder().setMaxDataItemCount(1).build();
-
-      String datasetName = DatasetName.of(project, location, dataset).toString();
-
       DataLabelingJob dataLabelingJob =
           DataLabelingJob.newBuilder()
               .setDisplayName(displayName)
-              .addDatasets(datasetName)
+              // Full resource name: projects/{project}/locations/{location}/datasets/{dataset_id}
+              .addDatasets(dataset)
               .setLabelerCount(1)
               .setInstructionUri(instructionUri)
               .setInputsSchemaUri(inputsSchemaUri)
@@ -89,7 +83,6 @@ public class CreateDataLabelingJobActiveLearningSample {
       LocationName parent = LocationName.of(project, location);
       DataLabelingJob response = client.createDataLabelingJob(parent, dataLabelingJob);
       System.out.format("response: %s\n", response);
-      System.out.format("Name: %s\n", response.getName());
     }
   }
 }

@@ -17,16 +17,13 @@
 package aiplatform;
 
 // [START aiplatform_create_batch_prediction_job_bigquery_sample]
-import com.google.cloud.aiplatform.v1.BatchPredictionJob;
-import com.google.cloud.aiplatform.v1.BigQueryDestination;
-import com.google.cloud.aiplatform.v1.BigQuerySource;
-import com.google.cloud.aiplatform.v1.JobServiceClient;
-import com.google.cloud.aiplatform.v1.JobServiceSettings;
-import com.google.cloud.aiplatform.v1.LocationName;
-import com.google.cloud.aiplatform.v1.ModelName;
+import com.google.cloud.aiplatform.v1beta1.BatchPredictionJob;
+import com.google.cloud.aiplatform.v1beta1.BigQueryDestination;
+import com.google.cloud.aiplatform.v1beta1.BigQuerySource;
+import com.google.cloud.aiplatform.v1beta1.JobServiceClient;
+import com.google.cloud.aiplatform.v1beta1.JobServiceSettings;
+import com.google.cloud.aiplatform.v1beta1.LocationName;
 import com.google.gson.JsonObject;
-import com.google.protobuf.Value;
-import com.google.protobuf.util.JsonFormat;
 import java.io.IOException;
 
 public class CreateBatchPredictionJobBigquerySample {
@@ -34,16 +31,18 @@ public class CreateBatchPredictionJobBigquerySample {
   public static void main(String[] args) throws IOException {
     // TODO(developer): Replace these variables before running the sample.
     String project = "PROJECT";
+    String location = "us-central1";
     String displayName = "DISPLAY_NAME";
-    String modelName = "MODEL_NAME";
+    String modelId = "MODEL_ID";
     String instancesFormat = "INSTANCES_FORMAT";
     String bigquerySourceInputUri = "BIGQUERY_SOURCE_INPUT_URI";
     String predictionsFormat = "PREDICTIONS_FORMAT";
     String bigqueryDestinationOutputUri = "BIGQUERY_DESTINATION_OUTPUT_URI";
     createBatchPredictionJobBigquerySample(
         project,
+        location,
         displayName,
-        modelName,
+        modelId,
         instancesFormat,
         bigquerySourceInputUri,
         predictionsFormat,
@@ -52,27 +51,26 @@ public class CreateBatchPredictionJobBigquerySample {
 
   static void createBatchPredictionJobBigquerySample(
       String project,
+      String location,
       String displayName,
-      String model,
+      String modelId,
       String instancesFormat,
       String bigquerySourceInputUri,
       String predictionsFormat,
       String bigqueryDestinationOutputUri)
       throws IOException {
+    // The AI Platform services require regional API endpoints.
     JobServiceSettings settings =
         JobServiceSettings.newBuilder()
             .setEndpoint("us-central1-aiplatform.googleapis.com:443")
             .build();
-    String location = "us-central1";
 
     // Initialize client that will be used to send requests. This client only needs to be created
     // once, and can be reused for multiple requests. After completing all of your requests, call
     // the "close" method on the client to safely clean up any remaining background resources.
     try (JobServiceClient client = JobServiceClient.create(settings)) {
+      String modelName = ModelName.of(project, location, modelId).toString();
       JsonObject jsonModelParameters = new JsonObject();
-      Value.Builder modelParametersBuilder = Value.newBuilder();
-      JsonFormat.parser().merge(jsonModelParameters.toString(), modelParametersBuilder);
-      Value modelParameters = modelParametersBuilder.build();
       BigQuerySource bigquerySource =
           BigQuerySource.newBuilder().setInputUri(bigquerySourceInputUri).build();
       BatchPredictionJob.InputConfig inputConfig =
@@ -87,7 +85,6 @@ public class CreateBatchPredictionJobBigquerySample {
               .setPredictionsFormat(predictionsFormat)
               .setBigqueryDestination(bigqueryDestination)
               .build();
-      String modelName = ModelName.of(project, location, model).toString();
       BatchPredictionJob batchPredictionJob =
           BatchPredictionJob.newBuilder()
               .setDisplayName(displayName)
@@ -95,11 +92,12 @@ public class CreateBatchPredictionJobBigquerySample {
               .setModelParameters(modelParameters)
               .setInputConfig(inputConfig)
               .setOutputConfig(outputConfig)
+              // optional
+              .setGenerateExplanation(true)
               .build();
       LocationName parent = LocationName.of(project, location);
       BatchPredictionJob response = client.createBatchPredictionJob(parent, batchPredictionJob);
       System.out.format("response: %s\n", response);
-      System.out.format("\tName: %s\n", response.getName());
     }
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2021 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,12 @@
 package aiplatform;
 
 // [START aiplatform_create_data_labeling_job_specialist_pool_sample]
-import com.google.cloud.aiplatform.v1.DataLabelingJob;
-import com.google.cloud.aiplatform.v1.DatasetName;
-import com.google.cloud.aiplatform.v1.JobServiceClient;
-import com.google.cloud.aiplatform.v1.JobServiceSettings;
-import com.google.cloud.aiplatform.v1.LocationName;
-import com.google.cloud.aiplatform.v1.SpecialistPoolName;
+import com.google.cloud.aiplatform.v1beta1.DataLabelingJob;
+import com.google.cloud.aiplatform.v1beta1.JobServiceClient;
+import com.google.cloud.aiplatform.v1beta1.JobServiceSettings;
+import com.google.cloud.aiplatform.v1beta1.LocationName;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.google.protobuf.Value;
-import com.google.protobuf.util.JsonFormat;
 import java.io.IOException;
 
 public class CreateDataLabelingJobSpecialistPoolSample {
@@ -34,6 +30,7 @@ public class CreateDataLabelingJobSpecialistPoolSample {
   public static void main(String[] args) throws IOException {
     // TODO(developer): Replace these variables before running the sample.
     String project = "PROJECT";
+    String location = "us-central1";
     String displayName = "DISPLAY_NAME";
     String dataset = "DATASET";
     String specialistPool = "SPECIALIST_POOL";
@@ -42,6 +39,7 @@ public class CreateDataLabelingJobSpecialistPoolSample {
     String annotationSpec = "ANNOTATION_SPEC";
     createDataLabelingJobSpecialistPoolSample(
         project,
+        location,
         displayName,
         dataset,
         specialistPool,
@@ -52,6 +50,7 @@ public class CreateDataLabelingJobSpecialistPoolSample {
 
   static void createDataLabelingJobSpecialistPoolSample(
       String project,
+      String location,
       String displayName,
       String dataset,
       String specialistPool,
@@ -59,11 +58,11 @@ public class CreateDataLabelingJobSpecialistPoolSample {
       String inputsSchemaUri,
       String annotationSpec)
       throws IOException {
+    // The AI Platform services require regional API endpoints.
     JobServiceSettings settings =
         JobServiceSettings.newBuilder()
             .setEndpoint("us-central1-aiplatform.googleapis.com:443")
             .build();
-    String location = "us-central1";
 
     // Initialize client that will be used to send requests. This client only needs to be created
     // once, and can be reused for multiple requests. After completing all of your requests, call
@@ -73,18 +72,11 @@ public class CreateDataLabelingJobSpecialistPoolSample {
       jsonAnnotationSpecs.add(annotationSpec);
       JsonObject jsonInputs = new JsonObject();
       jsonInputs.add("annotation_specs", jsonAnnotationSpecs);
-      Value.Builder inputsBuilder = Value.newBuilder();
-      JsonFormat.parser().merge(jsonInputs.toString(), inputsBuilder);
-      Value inputs = inputsBuilder.build();
-
-      String datasetName = DatasetName.of(project, location, dataset).toString();
-      String specialistPoolName =
-          SpecialistPoolName.of(project, location, specialistPool).toString();
-
       DataLabelingJob dataLabelingJob =
           DataLabelingJob.newBuilder()
               .setDisplayName(displayName)
-              .addDatasets(datasetName)
+              // Full resource name: projects/{project}/locations/{location}/datasets/{dataset_id}
+              .addDatasets(dataset)
               .setLabelerCount(1)
               .setInstructionUri(instructionUri)
               .setInputsSchemaUri(inputsSchemaUri)
@@ -92,7 +84,9 @@ public class CreateDataLabelingJobSpecialistPoolSample {
               .putAnnotationLabels(
                   "aiplatform.googleapis.com/annotation_set_name",
                   "data_labeling_job_specialist_pool")
-              .addSpecialistPools(specialistPoolName)
+              // Full resource name:
+              // projects/{project}/locations/{location}/specialistPools/{specialist_pool_id}
+              .addSpecialistPools(specialistPool)
               .build();
       LocationName parent = LocationName.of(project, location);
       DataLabelingJob response = client.createDataLabelingJob(parent, dataLabelingJob);
