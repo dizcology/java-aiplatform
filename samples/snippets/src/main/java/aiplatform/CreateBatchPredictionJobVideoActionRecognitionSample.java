@@ -17,15 +17,13 @@
 package aiplatform;
 
 // [START aiplatform_create_batch_prediction_job_video_action_recognition_sample]
-import com.google.cloud.aiplatform.util.ValueConverter;
-import com.google.cloud.aiplatform.v1.BatchPredictionJob;
-import com.google.cloud.aiplatform.v1.GcsDestination;
-import com.google.cloud.aiplatform.v1.GcsSource;
-import com.google.cloud.aiplatform.v1.JobServiceClient;
-import com.google.cloud.aiplatform.v1.JobServiceSettings;
-import com.google.cloud.aiplatform.v1.LocationName;
-import com.google.cloud.aiplatform.v1.ModelName;
-import com.google.protobuf.Value;
+import com.google.cloud.aiplatform.v1beta1.BatchPredictionJob;
+import com.google.cloud.aiplatform.v1beta1.GcsDestination;
+import com.google.cloud.aiplatform.v1beta1.GcsSource;
+import com.google.cloud.aiplatform.v1beta1.JobServiceClient;
+import com.google.cloud.aiplatform.v1beta1.JobServiceSettings;
+import com.google.cloud.aiplatform.v1beta1.LocationName;
+import com.google.gson.JsonObject;
 import java.io.IOException;
 
 public class CreateBatchPredictionJobVideoActionRecognitionSample {
@@ -33,32 +31,36 @@ public class CreateBatchPredictionJobVideoActionRecognitionSample {
   public static void main(String[] args) throws IOException {
     // TODO(developer): Replace these variables before running the sample.
     String project = "PROJECT";
+    String location = "us-central1";
     String displayName = "DISPLAY_NAME";
-    String model = "MODEL";
+    String modelId = "MODEL_ID";
     String gcsSourceUri = "GCS_SOURCE_URI";
     String gcsDestinationOutputUriPrefix = "GCS_DESTINATION_OUTPUT_URI_PREFIX";
     createBatchPredictionJobVideoActionRecognitionSample(
-        project, displayName, model, gcsSourceUri, gcsDestinationOutputUriPrefix);
+        project, location, displayName, modelId, gcsSourceUri, gcsDestinationOutputUriPrefix);
   }
 
   static void createBatchPredictionJobVideoActionRecognitionSample(
       String project,
+      String location,
       String displayName,
-      String model,
+      String modelId,
       String gcsSourceUri,
       String gcsDestinationOutputUriPrefix)
       throws IOException {
+    // The AI Platform services require regional API endpoints.
     JobServiceSettings settings =
         JobServiceSettings.newBuilder()
             .setEndpoint("us-central1-aiplatform.googleapis.com:443")
             .build();
-    String location = "us-central1";
 
     // Initialize client that will be used to send requests. This client only needs to be created
     // once, and can be reused for multiple requests. After completing all of your requests, call
     // the "close" method on the client to safely clean up any remaining background resources.
     try (JobServiceClient client = JobServiceClient.create(settings)) {
-      Value modelParameters = ValueConverter.EMPTY_VALUE;
+      String modelName = ModelName.of(project, location, modelId).toString();
+      JsonObject jsonModelParameters = new JsonObject();
+      jsonModelParameters.addProperty("confidenceThreshold", 0.5);
       GcsSource gcsSource = GcsSource.newBuilder().addUris(gcsSourceUri).build();
       BatchPredictionJob.InputConfig inputConfig =
           BatchPredictionJob.InputConfig.newBuilder()
@@ -72,9 +74,6 @@ public class CreateBatchPredictionJobVideoActionRecognitionSample {
               .setPredictionsFormat("jsonl")
               .setGcsDestination(gcsDestination)
               .build();
-
-      String modelName = ModelName.of(project, location, model).toString();
-
       BatchPredictionJob batchPredictionJob =
           BatchPredictionJob.newBuilder()
               .setDisplayName(displayName)
@@ -86,7 +85,6 @@ public class CreateBatchPredictionJobVideoActionRecognitionSample {
       LocationName parent = LocationName.of(project, location);
       BatchPredictionJob response = client.createBatchPredictionJob(parent, batchPredictionJob);
       System.out.format("response: %s\n", response);
-      System.out.format("\tName: %s\n", response.getName());
     }
   }
 }

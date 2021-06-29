@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2021 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,13 @@ package aiplatform;
 
 // [START aiplatform_import_data_video_action_recognition_sample]
 import com.google.api.gax.longrunning.OperationFuture;
-import com.google.cloud.aiplatform.v1.DatasetName;
-import com.google.cloud.aiplatform.v1.DatasetServiceClient;
-import com.google.cloud.aiplatform.v1.DatasetServiceSettings;
-import com.google.cloud.aiplatform.v1.GcsSource;
-import com.google.cloud.aiplatform.v1.ImportDataConfig;
-import com.google.cloud.aiplatform.v1.ImportDataOperationMetadata;
-import com.google.cloud.aiplatform.v1.ImportDataResponse;
+import com.google.cloud.aiplatform.v1beta1.DatasetName;
+import com.google.cloud.aiplatform.v1beta1.DatasetServiceClient;
+import com.google.cloud.aiplatform.v1beta1.DatasetServiceSettings;
+import com.google.cloud.aiplatform.v1beta1.GcsSource;
+import com.google.cloud.aiplatform.v1beta1.ImportDataConfig;
+import com.google.cloud.aiplatform.v1beta1.ImportDataOperationMetadata;
+import com.google.cloud.aiplatform.v1beta1.ImportDataResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,19 +36,20 @@ public class ImportDataVideoActionRecognitionSample {
       throws IOException, ExecutionException, InterruptedException {
     // TODO(developer): Replace these variables before running the sample.
     String project = "PROJECT";
+    String location = "us-central1";
     String datasetId = "DATASET_ID";
     String gcsSourceUri = "GCS_SOURCE_URI";
-    importDataVideoActionRecognitionSample(project, datasetId, gcsSourceUri);
+    importDataVideoActionRecognitionSample(project, location, datasetId, gcsSourceUri);
   }
 
   static void importDataVideoActionRecognitionSample(
-      String project, String datasetId, String gcsSourceUri)
+      String project, String location, String datasetId, String gcsSourceUri)
       throws IOException, ExecutionException, InterruptedException {
+    // The AI Platform services require regional API endpoints.
     DatasetServiceSettings settings =
         DatasetServiceSettings.newBuilder()
             .setEndpoint("us-central1-aiplatform.googleapis.com:443")
             .build();
-    String location = "us-central1";
 
     // Initialize client that will be used to send requests. This client only needs to be created
     // once, and can be reused for multiple requests. After completing all of your requests, call
@@ -59,8 +60,7 @@ public class ImportDataVideoActionRecognitionSample {
           ImportDataConfig.newBuilder()
               .setGcsSource(gcsSource)
               .setImportSchemaUri(
-                  "gs://google-cloud-aiplatform/schema/dataset/ioformat/"
-                      + "video_action_recognition_io_format_1.0.0.yaml")
+                  "gs://google-cloud-aiplatform/schema/dataset/ioformat/video_action_recognition_io_format_1.0.0.yaml")
               .build();
       List<ImportDataConfig> importConfigs = new ArrayList<>();
       importConfigs.add(importConfig0);

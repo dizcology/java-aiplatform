@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2021 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 package aiplatform;
 
 // [START aiplatform_get_model_evaluation_video_action_recognition_sample]
-import com.google.cloud.aiplatform.v1.ModelEvaluation;
-import com.google.cloud.aiplatform.v1.ModelEvaluationName;
-import com.google.cloud.aiplatform.v1.ModelServiceClient;
-import com.google.cloud.aiplatform.v1.ModelServiceSettings;
+import com.google.cloud.aiplatform.v1beta1.ModelEvaluation;
+import com.google.cloud.aiplatform.v1beta1.ModelEvaluationName;
+import com.google.cloud.aiplatform.v1beta1.ModelServiceClient;
+import com.google.cloud.aiplatform.v1beta1.ModelServiceSettings;
 import java.io.IOException;
 
 public class GetModelEvaluationVideoActionRecognitionSample {
@@ -28,18 +28,19 @@ public class GetModelEvaluationVideoActionRecognitionSample {
   public static void main(String[] args) throws IOException {
     // TODO(developer): Replace these variables before running the sample.
     String project = "PROJECT";
+    String location = "us-central1";
     String modelId = "MODEL_ID";
     String evaluationId = "EVALUATION_ID";
-    getModelEvaluationVideoActionRecognitionSample(project, modelId, evaluationId);
+    getModelEvaluationVideoActionRecognitionSample(project, location, modelId, evaluationId);
   }
 
   static void getModelEvaluationVideoActionRecognitionSample(
-      String project, String modelId, String evaluationId) throws IOException {
+      String project, String location, String modelId, String evaluationId) throws IOException {
+    // The AI Platform services require regional API endpoints.
     ModelServiceSettings settings =
         ModelServiceSettings.newBuilder()
             .setEndpoint("us-central1-aiplatform.googleapis.com:443")
             .build();
-    String location = "us-central1";
 
     // Initialize client that will be used to send requests. This client only needs to be created
     // once, and can be reused for multiple requests. After completing all of your requests, call

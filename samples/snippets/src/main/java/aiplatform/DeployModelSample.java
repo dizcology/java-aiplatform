@@ -1,11 +1,11 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2021 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,41 +17,41 @@
 package aiplatform;
 
 // [START aiplatform_deploy_model_sample]
-
 import com.google.api.gax.longrunning.OperationFuture;
-import com.google.cloud.aiplatform.v1.AutomaticResources;
-import com.google.cloud.aiplatform.v1.DedicatedResources;
-import com.google.cloud.aiplatform.v1.DeployModelOperationMetadata;
-import com.google.cloud.aiplatform.v1.DeployModelResponse;
-import com.google.cloud.aiplatform.v1.DeployedModel;
-import com.google.cloud.aiplatform.v1.EndpointName;
-import com.google.cloud.aiplatform.v1.EndpointServiceClient;
-import com.google.cloud.aiplatform.v1.EndpointServiceSettings;
-import com.google.cloud.aiplatform.v1.MachineSpec;
-import com.google.cloud.aiplatform.v1.ModelName;
+import com.google.cloud.aiplatform.v1beta1.AutomaticResources;
+import com.google.cloud.aiplatform.v1beta1.DeployModelOperationMetadata;
+import com.google.cloud.aiplatform.v1beta1.DeployModelResponse;
+import com.google.cloud.aiplatform.v1beta1.DeployedModel;
+import com.google.cloud.aiplatform.v1beta1.EndpointName;
+import com.google.cloud.aiplatform.v1beta1.EndpointServiceClient;
+import com.google.cloud.aiplatform.v1beta1.EndpointServiceSettings;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public class DeployModelSample {
 
   public static void main(String[] args)
-      throws IOException, InterruptedException, ExecutionException, TimeoutException {
+      throws IOException, ExecutionException, InterruptedException {
     // TODO(developer): Replace these variables before running the sample.
-    String project = "YOUR_PROJECT_ID";
-    String deployedModelDisplayName = "YOUR_DEPLOYED_MODEL_DISPLAY_NAME";
-    String endpointId = "YOUR_ENDPOINT_NAME";
-    String modelId = "YOUR_MODEL_ID";
-    deployModelSample(project, deployedModelDisplayName, endpointId, modelId);
+    String project = "PROJECT";
+    String location = "us-central1";
+    String endpointId = "ENDPOINT_ID";
+    String modelId = "MODEL_ID";
+    String deployedModelDisplayName = "DEPLOYED_MODEL_DISPLAY_NAME";
+    deployModelSample(project, location, endpointId, modelId, deployedModelDisplayName);
   }
 
   static void deployModelSample(
-      String project, String deployedModelDisplayName, String endpointId, String modelId)
-      throws IOException, InterruptedException, ExecutionException, TimeoutException {
-    EndpointServiceSettings endpointServiceSettings =
+      String project,
+      String location,
+      String endpointId,
+      String modelId,
+      String deployedModelDisplayName)
+      throws IOException, ExecutionException, InterruptedException {
+    // The AI Platform services require regional API endpoints.
+    EndpointServiceSettings settings =
         EndpointServiceSettings.newBuilder()
             .setEndpoint("us-central1-aiplatform.googleapis.com:443")
             .build();
@@ -59,55 +59,36 @@ public class DeployModelSample {
     // Initialize client that will be used to send requests. This client only needs to be created
     // once, and can be reused for multiple requests. After completing all of your requests, call
     // the "close" method on the client to safely clean up any remaining background resources.
-    try (EndpointServiceClient endpointServiceClient =
-        EndpointServiceClient.create(endpointServiceSettings)) {
-      String location = "us-central1";
-      EndpointName endpointName = EndpointName.of(project, location, endpointId);
+    try (EndpointServiceClient client = EndpointServiceClient.create(settings)) {
+      String modelName = ModelName.of(project, location, modelId).toString();
+      AutomaticResources automaticResources =
+          AutomaticResources.newBuilder().setMinReplicaCount(1).setMaxReplicaCount(1).build();
+      DeployedModel deployedModel =
+          DeployedModel.newBuilder()
+              .setModel(modelName)
+              .setDisplayName(deployedModelDisplayName)
+              // AutoML Vision models require `automatic_resources` field
+              // Other model types may require `dedicated_resources` field instead
+              .setAutomaticResources(automaticResources)
+              .build();
       // key '0' assigns traffic for the newly deployed model
       // Traffic percentage values must add up to 100
       // Leave dictionary empty if endpoint should not accept any traffic
       Map<String, Integer> trafficSplit = new HashMap<>();
       trafficSplit.put("0", 100);
-      ModelName modelName = ModelName.of(project, location, modelId);
-      AutomaticResources automaticResourcesInput =
-          AutomaticResources.newBuilder().setMinReplicaCount(1).setMaxReplicaCount(1).build();
-      DeployedModel deployedModelInput =
-          DeployedModel.newBuilder()
-              .setModel(modelName.toString())
-              .setDisplayName(deployedModelDisplayName)
-              .setAutomaticResources(automaticResourcesInput)
-              .build();
+      EndpointName endpoint = EndpointName.of(project, location, endpointId);
+      OperationFuture<DeployModelResponse, DeployModelOperationMetadata> response =
+          client.deployModelAsync(endpoint, deployedModel, trafficSplit);
 
-      OperationFuture<DeployModelResponse, DeployModelOperationMetadata> deployModelResponseFuture =
-          endpointServiceClient.deployModelAsync(endpointName, deployedModelInput, trafficSplit);
-      System.out.format(
-          "Operation name: %s\n", deployModelResponseFuture.getInitialFuture().get().getName());
-      System.out.println("Waiting for operation to finish...");
-      DeployModelResponse deployModelResponse = deployModelResponseFuture.get(20, TimeUnit.MINUTES);
+      // You can use OperationFuture.getInitialFuture to get a future representing the initial
+      // response to the request, which contains information while the operation is in progress.
+      System.out.format("Operation name: %s\n", response.getInitialFuture().get().getName());
 
-      System.out.println("Deploy Model Response");
-      DeployedModel deployedModel = deployModelResponse.getDeployedModel();
-      System.out.println("\tDeployed Model");
-      System.out.format("\t\tid: %s\n", deployedModel.getId());
-      System.out.format("\t\tmodel: %s\n", deployedModel.getModel());
-      System.out.format("\t\tDisplay Name: %s\n", deployedModel.getDisplayName());
-      System.out.format("\t\tCreate Time: %s\n", deployedModel.getCreateTime());
-
-      DedicatedResources dedicatedResources = deployedModel.getDedicatedResources();
-      System.out.println("\t\tDedicated Resources");
-      System.out.format("\t\t\tMin Replica Count: %s\n", dedicatedResources.getMinReplicaCount());
-
-      MachineSpec machineSpec = dedicatedResources.getMachineSpec();
-      System.out.println("\t\t\tMachine Spec");
-      System.out.format("\t\t\t\tMachine Type: %s\n", machineSpec.getMachineType());
-      System.out.format("\t\t\t\tAccelerator Type: %s\n", machineSpec.getAcceleratorType());
-      System.out.format("\t\t\t\tAccelerator Count: %s\n", machineSpec.getAcceleratorCount());
-
-      AutomaticResources automaticResources = deployedModel.getAutomaticResources();
-      System.out.println("\t\tAutomatic Resources");
-      System.out.format("\t\t\tMin Replica Count: %s\n", automaticResources.getMinReplicaCount());
-      System.out.format("\t\t\tMax Replica Count: %s\n", automaticResources.getMaxReplicaCount());
+      // OperationFuture.get() will block until the operation is finished.
+      DeployModelResponse deployModelResponse = response.get();
+      System.out.format("deployModelResponse: %s\n", deployModelResponse);
     }
   }
 }
+
 // [END aiplatform_deploy_model_sample]
